@@ -23,9 +23,9 @@ public class vmsim {
         
         numFrames = 5;
         algorithm = "clock";
-        traceFile = "testTrace.txt";
+        traceFile = "testTrace.trace";
         
-        ClockRAM clockRAM = new ClockRAM(numFrames);
+        ClockPageTable clockRAM = new ClockPageTable(numFrames);
         
         String address = null;
         boolean isRead = true;
@@ -40,11 +40,9 @@ public class vmsim {
                 System.out.println(line);
                 address = line.substring(0, 8);
                 if (line.substring(9, 10).equals("R")) {
-                    // read
-                    clockRAM.read(address);
+                    //clockRAM.read(address);
                 } else {
-                    // write
-                    clockRAM.write(address);
+                    //clockRAM.write(address);
                 }
                 
                 System.out.println(clockRAM + "\n");

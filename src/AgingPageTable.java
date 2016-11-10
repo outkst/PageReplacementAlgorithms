@@ -9,25 +9,51 @@ import java.util.Arrays;
  * 
  */
 
-public class ClockRAM {
-    ClockPageFrame[] frames;
-    int oldestFrame;
-    int activeFrames;
-    int pageFaults;
-    int diskWrites;
+public class AgingPageTable {
+    AgingPageFrame[] frames;
+    private int[] counters;
+    private int refresh;
+    private int clock;
     
-    public ClockRAM(int numFrames) {
-        frames = new ClockPageFrame[numFrames];
+    private int activeFrames;
+    private int pageFaults;
+    private int diskWrites;
+    
+    public AgingPageTable(int numFrames, int refresh) {
+        frames = new AgingPageFrame[numFrames];
         for (int i=0; i < numFrames; i++) {
-            frames[i] = new ClockPageFrame();
+            frames[i] = new AgingPageFrame();
         }
         
-        oldestFrame = 0;
-        activeFrames = 0;
-        pageFaults = 0;
-        diskWrites = 0;
+        
+        this.counters = new int[numFrames];  // hold counter for each frame
+        
+        this.refresh = refresh;     // refresh rate (clock cycles)
+        this.clock = refresh-1;     // zero-based countdown
+        
+        this.activeFrames = 0;
+        this.pageFaults = 0;
+        this.diskWrites = 0;
     }
     
+    /**
+     * Counts down from the refresh rate to zero. At zero, the "current" bit in
+     *      in the counter gets shifted to the right, filling up the counter from
+     *      most significant bit to least significant bit.
+     */
+    private void countdown() {
+        clock = (clock+1) % refresh;
+        
+        if (clock==0) {
+            // shift right
+            for (int counter : counters) {
+                System.out.println(String.format("(%d) %s", counter, Integer.toBinaryString(counter)));
+                counter = counter >> 1;
+                System.out.println(String.format("(%d) %s", counter, Integer.toBinaryString(counter)));
+            }
+        }
+    }
+   
     
     /**
      * Starting from the current frame pointer, look for the oldest page frame that is not
@@ -37,9 +63,10 @@ public class ClockRAM {
      *      If current frame is unreferenced, replace with new frame.
      */
     private void replace(String address, boolean isDirty) {
-        while (frames[oldestFrame].isReferenced()) {
-            frames[oldestFrame].isReferenced(false);
-            oldestFrame = (oldestFrame+1) % frames.length;  // "wrap" around
+        // find the frame with the least amount of use
+        int oldestFrame = counters[0];
+        for (int x : counters) {
+            if (x < oldestFrame) { oldestFrame = x; }
         }
         
         // see if the current frame needs written to disk before replacing
@@ -49,14 +76,10 @@ public class ClockRAM {
         
         // overwrite the oldest unreferenced frame with the new address
         frames[oldestFrame].setAddress(address);
-        frames[oldestFrame].isReferenced(true);
         frames[oldestFrame].isDirty(isDirty);
         
         // update total number of page faults
         pageFaults++;
-        
-        // oldest is now next to the currently replaced page frame
-        oldestFrame = (oldestFrame+1) % frames.length;  // "wrap" around
     }
     
     
@@ -87,26 +110,34 @@ public class ClockRAM {
      */
     public void read(String address) {
         // first search if this frame exists
-        int location = search(address);
+        int frameLocation = search(address);
         
         // couldn't find, so insert
-        if (location == -1) {
+        if (frameLocation == -1) {
             if (activeFrames < frames.length) {
                 // there's room to insert
                 frames[activeFrames].setAddress(address);
                 frames[activeFrames].isDirty(false);
-                frames[activeFrames].isReferenced(true);
                 activeFrames++;
             } else {
                 // must evict an existing page and insert new
                 replace(address, false);
             }
         } else {
-            // frame already existed; update referenced flag
-            frames[location].isReferenced(true);
+            // frame already existed; update counter
+            updateCounter(frameLocation);
         }
     }
     
+    
+    /**
+     * Sets the 8th bit as referenced.
+     * 
+     * @param frameCounter The frame counter number to update.
+     */
+    private void updateCounter(int frameCounter) {
+        counters[frameCounter] = counters[frameCounter] | 256;
+    }
     
     /**
      * Looks into the ClockRAM structure for the given frame and if it exists, then
@@ -121,15 +152,14 @@ public class ClockRAM {
      */
     public void write(String address) {
         // first search if this frame exists
-        int location = search(address);
+        int frameLocation = search(address);
         
         // couldn't find, so insert
-        if (location == -1) {
+        if (frameLocation == -1) {
             if (activeFrames < frames.length) {
                 // there's room to insert
                 frames[activeFrames].setAddress(address);
                 frames[activeFrames].isDirty(true);
-                frames[activeFrames].isReferenced(true);
                 activeFrames++;
             } else {
                 // must evict an existing page and insert new
@@ -137,14 +167,13 @@ public class ClockRAM {
             }
         } else {
             // frame already existed; update referenced & dirty flag
-            frames[location].isReferenced(true);
-            frames[location].isDirty(true);         // dirty because this is a write
+            frames[frameLocation].isDirty(true);         // dirty because this is a write
         }
     }
     
     @Override
     public String toString() {
         return String.format("FRAMES: %s\nOLDEST: %d\nACTIVE: %d\nPAGE FAULTS: %d\nDISK WRITES: %d", 
-                Arrays.toString(frames), this.oldestFrame, this.activeFrames, this.pageFaults, this.diskWrites);
+                Arrays.toString(frames), this.activeFrames, this.pageFaults, this.diskWrites);
     }
 }
