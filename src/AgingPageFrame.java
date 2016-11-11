@@ -1,3 +1,6 @@
+
+import java.util.Arrays;
+
 /**
  *
  * @author Joe Meszar
@@ -84,6 +87,6 @@ public class AgingPageFrame {
     public String toString() {
         if (this.isEmpty()) { return "null"; }
         
-        return String.format("ADDRESS: %s DIRTY: %s REFERENCED: %s", this.address, this.dirty);
+        return String.format("ADDRESS: %s DIRTY: %s", this.address, this.dirty);
     }
 }

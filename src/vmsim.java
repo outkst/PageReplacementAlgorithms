@@ -22,10 +22,12 @@ public class vmsim {
         //getCommandLineArgs(args);
         
         numFrames = 5;
+        refresh = 3;
         algorithm = "clock";
         traceFile = "testTrace.trace";
         
         ClockPageTable clockRAM = new ClockPageTable(numFrames);
+        AgingPageTable agingRAM = new AgingPageTable(numFrames, refresh);
         
         String address = null;
         boolean isRead = true;
@@ -41,11 +43,13 @@ public class vmsim {
                 address = line.substring(0, 8);
                 if (line.substring(9, 10).equals("R")) {
                     //clockRAM.read(address);
+                    agingRAM.read(address);
                 } else {
                     //clockRAM.write(address);
+                    agingRAM.write(address);
                 }
                 
-                System.out.println(clockRAM + "\n");
+                System.out.println(agingRAM + "\n");
             }
 
         } catch (IOException e) {
