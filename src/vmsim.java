@@ -21,10 +21,10 @@ public class vmsim {
     public static void main(String[] args) {
         //getCommandLineArgs(args);
         
-        numFrames = 5;
+        numFrames = 8;
         refresh = 3;
         algorithm = "clock";
-        traceFile = "testTrace.trace";
+        traceFile = "gcc.trace";
         
         ClockPageTable clockRAM = new ClockPageTable(numFrames);
         AgingPageTable agingRAM = new AgingPageTable(numFrames, refresh);
@@ -39,18 +39,19 @@ public class vmsim {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                //System.out.println(line);
                 address = line.substring(0, 8);
                 if (line.substring(9, 10).equals("R")) {
-                    //clockRAM.read(address);
+                    clockRAM.read(address);
                     agingRAM.read(address);
                 } else {
-                    //clockRAM.write(address);
+                    clockRAM.write(address);
                     agingRAM.write(address);
                 }
-                
-                System.out.println(agingRAM + "\n");
             }
+            
+            System.out.println("Aging:\n" + agingRAM + "\n");
+            System.out.println("Clock:\n" + clockRAM + "\n");
 
         } catch (IOException e) {
             e.printStackTrace();

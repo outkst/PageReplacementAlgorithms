@@ -69,6 +69,9 @@ public class AgingPageTable {
             frameLocation = activeFrames;   // frame to use is this empty one
             activeFrames++;                 // active frames goes up
             
+            // update total number of page faults
+            pageFaults++;
+            
             frames[frameLocation].setAddress(address);
             
         } else if (frameLocation == -1) {

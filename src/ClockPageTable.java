@@ -97,6 +97,7 @@ public class ClockPageTable {
                 frames[activeFrames].isDirty(false);
                 frames[activeFrames].isReferenced(true);
                 activeFrames++;
+                pageFaults++;
             } else {
                 // must evict an existing page and insert new
                 replace(address, false);
