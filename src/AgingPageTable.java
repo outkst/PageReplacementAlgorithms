@@ -54,11 +54,8 @@ public class AgingPageTable {
    
     
     /**
-     * Starting from the current frame pointer, look for the oldest page frame that is not
-     *      currently being referenced, evict it, and insert the new frame:
-     * 
-     *      If current frame is referenced, mark as unreferenced and move to next
-     *      If current frame is unreferenced, replace with new frame.
+     * Using the aging counter bits, look for the Least Recently Used one, 
+     *      evict it, and insert the new frame.
      */
     private int replace(String address) {
         // first search if this frame exists already
