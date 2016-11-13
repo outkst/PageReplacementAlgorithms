@@ -100,8 +100,8 @@ public class vmsim {
                     break;
                     
                 case "opt":     // optimal page replacement
-                    //System.out.println(String.format("Total page faults: %d", ));
-                    //System.out.println(String.format("Total writes to disk: %d", ));
+                    //System.out.println(String.format("Total page faults:     %d", ));
+                    //System.out.println(String.format("Total writes to disk:  %d", ));
                     break;
                     
                 case "work":    // TBA 
