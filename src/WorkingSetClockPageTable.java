@@ -38,6 +38,13 @@ public class WorkingSetClockPageTable {
         this.oldestFrame = 0;
     }
     
+    public int getNumPageFaults() {
+        return this.pageFaults;
+    }
+    public int getNumWritesToDisk() {
+        return this.diskWrites;
+    }
+    
     /**
      * Counts down from the refresh rate to zero. At zero, cleanup is performed
      *      to remove all pages that have been 
@@ -59,6 +66,9 @@ public class WorkingSetClockPageTable {
      *      evict it, and insert the new frame.
      */
     private int replace(String address) {
+        // increase the virtual clock time
+        virtualTime++;
+        
         // first search if this frame exists already
         int frameLocation = search(address);
         
@@ -70,39 +80,87 @@ public class WorkingSetClockPageTable {
             // update total number of page faults
             pageFaults++;
             
-            frames[frameLocation].setAddress(address);
+            updatePageFrame(frameLocation, address);
             
         } else if (frameLocation == -1) {
             pageFaults++;
             
             // no open frames left, must evict/replace
-            int j=0;
-            while (j < frames.length) {
-                // start from oldest pointer
+            boolean keepLooking = true;
+            int curFrame = oldestFrame;     // start from the oldest
+            int j=0;                        // loop through entire frame size
+            
+            while ((j < frames.length) && keepLooking) {
                 // check reference bit
-                if (frames[oldestFrame].isReferenced() == false) {
-                    // unreferenced so clean and evict it
-                    diskWrites++;
-                    frames[frameLocation].setAddress(address);
-                } else if ((frames[oldestFrame].isReferenced() == false) 
-                        && ((virtualTime - frames[oldestFrame].getLastUsed()) < tau)
-                        && (frames[oldestFrame].isDirty())) {
+                if ((frames[curFrame].isReferenced() == false)
+                        && (frames[curFrame].isDirty() == false)) {
+                    
+                    // unreferenced and clean; evict it
+                    updatePageFrame(curFrame, address);
+                    keepLooking = false;
+                    
+                    frameLocation = curFrame;
+                    
+                } else if ((frames[curFrame].isReferenced() == false) 
+                        && ((virtualTime - frames[curFrame].getLastUsed()) < tau)
+                        && (frames[curFrame].isDirty())) {
+                    
+                    // unreferenced; older than tau; dirty
                     // write to disk and mark as clean
                     diskWrites++;
-                    frames[oldestFrame].isDirty(false);
+                    frames[curFrame].isDirty(false);
+                    
+                    // ensure that this frame location will be looked at again
+                    //      since it now meets the unreferenced, non-dirty requirements
+                    //      needed to evict and replace.
+                    j = 0;
+                    
+                } else {
+                    j++; // increase count
                 }
                 
+                curFrame = (curFrame+1) % frames.length;  // "wrap" around
+            }
+            
+            // special case where all frames are currently being
+            //      referenced, so evict the OLDEST
+            if (keepLooking) {
+                if (frames[oldestFrame].isDirty()) {
+                    diskWrites++;
+                }
                 
-                oldestFrame = (oldestFrame+1) % frames.length;  // "wrap" around
-                j++;
-            }           
+                // evict and insert new page frame
+                updatePageFrame(oldestFrame, address);
+                
+                // update the frame location used
+                frameLocation = oldestFrame;
+            }
+            
+            // update the oldest frame pointer
+            for (int i=0; i < frames.length; i++) {
+                if (frames[i].getLastUsed() < frames[oldestFrame].getLastUsed()) {
+                    oldestFrame = i;
+                }
+            }
         } else if (frameLocation >= 0) {
             // frame already exists. update referenced bit and age
-            frames[frameLocation].isReferenced(true);
-            frames[frameLocation].setLastUsed(virtualTime);
+            updatePageFrame(frameLocation, address);
         }
 
         return frameLocation; // return the newly used frame's location
+    }
+    
+    
+    /**
+     * Mimics the updating of a page frame.
+     * 
+     * @param frame The frame number to update.
+     * @param address The new address to store in this frame.
+     */
+    private void updatePageFrame(int frame, String address) {
+        frames[frame].setAddress(address);
+        frames[frame].isReferenced(true);
+        frames[frame].setLastUsed(virtualTime);
     }
     
     
@@ -132,20 +190,10 @@ public class WorkingSetClockPageTable {
      * @param address The new/existing page frame address to update as referenced.
      */
     public void read(String address) {
-        int frameLocation = replace(address);   // insert / update / replace frame
-        updateCounter(frameLocation);           // mark this frame as referenced within the bitmap
+        replace(address);   // insert / update / replace frame
         countdown();                            // one refresh frame has occurred
     }
-    
-    
-    /**
-     * Sets the 8th bit as referenced.
-     * 
-     * @param frameCounter The frame counter number to update.
-     */
-    private void updateCounter(int frameCounter) {
-        counters[frameCounter] = counters[frameCounter] | 256;
-    }
+
     
     /**
      * Looks into the ClockRAM structure for the given frame and if it exists, then
@@ -161,7 +209,6 @@ public class WorkingSetClockPageTable {
     public void write(String address) {
         int frameLocation = replace(address);   // insert / update / replace frame
         frames[frameLocation].isDirty(true);    // mark dirty because this is a write
-        updateCounter(frameLocation);           // mark this frame as referenced within the bitmap
         countdown();                            // one refresh frame has occurred
     }
     

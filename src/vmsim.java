@@ -16,18 +16,23 @@ public class vmsim {
     static int numFrames = -1;
     static int refresh = -1;
     static int tau = -1;
+    static int memAccesses = 0;
     static String algorithm="", traceFile="";
     
     public static void main(String[] args) {
         //getCommandLineArgs(args);
         
-        numFrames = 8;
+        numFrames = 2;
         refresh = 3;
+        tau = 2;
         algorithm = "clock";
-        traceFile = "gcc.trace";
+        traceFile = "testTrace.trace";
         
+        Object RAM;
+
         ClockPageTable clockRAM = new ClockPageTable(numFrames);
         AgingPageTable agingRAM = new AgingPageTable(numFrames, refresh);
+        WorkingSetClockPageTable WSClockRAM = new WorkingSetClockPageTable(numFrames, refresh, tau);
         
         String address = null;
         boolean isRead = true;
@@ -39,19 +44,69 @@ public class vmsim {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                //System.out.println(line);
+                memAccesses++;
+                
                 address = line.substring(0, 8);
                 if (line.substring(9, 10).equals("R")) {
-                    clockRAM.read(address);
-                    agingRAM.read(address);
+                    switch (algorithm) {
+                        case "aging":   // aging algorithm that approximates LRU with 8bit counter
+                            agingRAM.read(address);
+                            break;
+                        case "clock":   // better implementation of the (FiFo) 2nd chance algorithm
+                            clockRAM.read(address);
+                            break;
+                        case "opt":     // optimal page replacement
+                            
+                            break;
+                        case "work":    // TBA 
+                            WSClockRAM.read(address);
+                            break;
+                    }
                 } else {
-                    clockRAM.write(address);
-                    agingRAM.write(address);
+                    switch (algorithm) {
+                        case "aging":   // aging algorithm that approximates LRU with 8bit counter
+                            agingRAM.write(address);
+                            break;
+                        case "clock":   // better implementation of the (FiFo) 2nd chance algorithm
+                            clockRAM.write(address);
+                            break;
+                        case "opt":     // optimal page replacement
+                            
+                            break;
+                        case "work":    // TBA 
+                            WSClockRAM.write(address);
+                            break;
+                    }
                 }
             }
             
             System.out.println("Aging:\n" + agingRAM + "\n");
             System.out.println("Clock:\n" + clockRAM + "\n");
+            
+            int totMemAccesses, totPageFaults, totWritesToDisk;
+            System.out.println(String.format("Algorithm: %s", algorithm));
+            System.out.println(String.format("Number of frames: ", numFrames));
+            System.out.println(String.format("Total memory accesses: %d", memAccesses));
+            
+            switch (algorithm) {
+                case "aging":   // aging algorithm that approximates LRU with 8bit counter
+                    System.out.println(String.format("Total page faults: %d", ));
+                    System.out.println(String.format("Total writes to disk: %d", ));
+                    break;
+                case "clock":   // better implementation of the (FiFo) 2nd chance algorithm
+                    System.out.println(String.format("Total page faults: %d", ));
+                    System.out.println(String.format("Total writes to disk: %d", ));
+                    break;
+                case "opt":     // optimal page replacement
+                    System.out.println(String.format("Total page faults: %d", ));
+                    System.out.println(String.format("Total writes to disk: %d", ));
+                    break;
+                case "work":    // TBA 
+                    System.out.println(String.format("Total page faults: %d", WSClockRAM.getNumPageFaults()));
+                    System.out.println(String.format("Total writes to disk: %d", WSClockRAM.getNumWritesToDisk()));
+                    break;
+            }
+            
 
         } catch (IOException e) {
             e.printStackTrace();
