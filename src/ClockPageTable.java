@@ -28,6 +28,13 @@ public class ClockPageTable {
         diskWrites = 0;
     }
     
+    public int getNumPageFaults() {
+        return this.pageFaults;
+    }
+    public int getNumWritesToDisk() {
+        return this.diskWrites;
+    }
+    
     
     /**
      * Starting from the current frame pointer, look for the oldest page frame that is not

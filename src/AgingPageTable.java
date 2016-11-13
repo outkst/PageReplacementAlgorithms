@@ -36,6 +36,13 @@ public class AgingPageTable {
         this.diskWrites = 0;
     }
     
+    public int getNumPageFaults() {
+        return this.pageFaults;
+    }
+    public int getNumWritesToDisk() {
+        return this.diskWrites;
+    }
+    
     /**
      * Counts down from the refresh rate to zero. At zero, the "current" bit in
      *      in the counter gets shifted to the right, filling up the counter from

@@ -84,26 +84,29 @@ public class vmsim {
             System.out.println("Clock:\n" + clockRAM + "\n");
             
             int totMemAccesses, totPageFaults, totWritesToDisk;
-            System.out.println(String.format("Algorithm: %s", algorithm));
-            System.out.println(String.format("Number of frames: ", numFrames));
+            System.out.println(String.format("Algorithm:             %s", algorithm));
+            System.out.println(String.format("Number of frames:      %d", numFrames));
             System.out.println(String.format("Total memory accesses: %d", memAccesses));
             
             switch (algorithm) {
                 case "aging":   // aging algorithm that approximates LRU with 8bit counter
-                    System.out.println(String.format("Total page faults: %d", ));
-                    System.out.println(String.format("Total writes to disk: %d", ));
+                    System.out.println(String.format("Total page faults:     %d", agingRAM.getNumPageFaults()));
+                    System.out.println(String.format("Total writes to disk:  %d", agingRAM.getNumWritesToDisk()));
                     break;
+                    
                 case "clock":   // better implementation of the (FiFo) 2nd chance algorithm
-                    System.out.println(String.format("Total page faults: %d", ));
-                    System.out.println(String.format("Total writes to disk: %d", ));
+                    System.out.println(String.format("Total page faults:     %d", clockRAM.getNumPageFaults()));
+                    System.out.println(String.format("Total writes to disk:  %d", clockRAM.getNumWritesToDisk()));
                     break;
+                    
                 case "opt":     // optimal page replacement
-                    System.out.println(String.format("Total page faults: %d", ));
-                    System.out.println(String.format("Total writes to disk: %d", ));
+                    //System.out.println(String.format("Total page faults: %d", ));
+                    //System.out.println(String.format("Total writes to disk: %d", ));
                     break;
+                    
                 case "work":    // TBA 
-                    System.out.println(String.format("Total page faults: %d", WSClockRAM.getNumPageFaults()));
-                    System.out.println(String.format("Total writes to disk: %d", WSClockRAM.getNumWritesToDisk()));
+                    System.out.println(String.format("Total page faults:     %d", WSClockRAM.getNumPageFaults()));
+                    System.out.println(String.format("Total writes to disk:  %d", WSClockRAM.getNumWritesToDisk()));
                     break;
             }
             
