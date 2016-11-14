@@ -84,7 +84,7 @@ public class AgingPageTable {
             frameLocation = 0;
             for (int i=0; i < activeFrames; i++) {
                 if (counters[i] < value) { 
-                    frameLocation = i;              // hold location of oldest frame
+                    frameLocation = i;      // hold location of oldest frame
                     value = counters[i];    // hold oldest frame's value
                 }
             }

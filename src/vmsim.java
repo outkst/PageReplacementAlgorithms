@@ -25,7 +25,7 @@ public class vmsim {
         numFrames = 2;
         refresh = 3;
         tau = 2;
-        algorithm = "clock";
+        algorithm = "opt";
         traceFile = "testTrace.trace";
         
         Object RAM;
@@ -33,6 +33,7 @@ public class vmsim {
         ClockPageTable clockRAM = new ClockPageTable(numFrames);
         AgingPageTable agingRAM = new AgingPageTable(numFrames, refresh);
         WorkingSetClockPageTable WSClockRAM = new WorkingSetClockPageTable(numFrames, refresh, tau);
+        OptimalPageTable optimalRAM = new OptimalPageTable(numFrames, traceFile);
         
         String address = null;
         boolean isRead = true;
@@ -46,8 +47,8 @@ public class vmsim {
             while ((line = reader.readLine()) != null) {
                 memAccesses++;
                 
-                address = line.substring(0, 8);
-                if (line.substring(9, 10).equals("R")) {
+                address = line.split(" ")[0];
+                if (line.split(" ")[1].equals("R")) {
                     switch (algorithm) {
                         case "aging":   // aging algorithm that approximates LRU with 8bit counter
                             agingRAM.read(address);
@@ -56,9 +57,9 @@ public class vmsim {
                             clockRAM.read(address);
                             break;
                         case "opt":     // optimal page replacement
-                            
+                            optimalRAM.read(address);
                             break;
-                        case "work":    // TBA 
+                        case "work":    // working set clock (aging + clock)
                             WSClockRAM.read(address);
                             break;
                     }
@@ -71,23 +72,20 @@ public class vmsim {
                             clockRAM.write(address);
                             break;
                         case "opt":     // optimal page replacement
-                            
+                            optimalRAM.write(address);
                             break;
-                        case "work":    // TBA 
+                        case "work":    // working set clock (aging + clock) 
                             WSClockRAM.write(address);
                             break;
                     }
                 }
             }
             
-            System.out.println("Aging:\n" + agingRAM + "\n");
-            System.out.println("Clock:\n" + clockRAM + "\n");
-            
-            int totMemAccesses, totPageFaults, totWritesToDisk;
             System.out.println(String.format("Algorithm:             %s", algorithm));
             System.out.println(String.format("Number of frames:      %d", numFrames));
             System.out.println(String.format("Total memory accesses: %d", memAccesses));
             
+            // print out statistics for the algorithm
             switch (algorithm) {
                 case "aging":   // aging algorithm that approximates LRU with 8bit counter
                     System.out.println(String.format("Total page faults:     %d", agingRAM.getNumPageFaults()));
@@ -100,8 +98,8 @@ public class vmsim {
                     break;
                     
                 case "opt":     // optimal page replacement
-                    //System.out.println(String.format("Total page faults:     %d", ));
-                    //System.out.println(String.format("Total writes to disk:  %d", ));
+                    System.out.println(String.format("Total page faults:     %d", optimalRAM.getNumPageFaults()));
+                    System.out.println(String.format("Total writes to disk:  %d", optimalRAM.getNumWritesToDisk()));
                     break;
                     
                 case "work":    // TBA 
